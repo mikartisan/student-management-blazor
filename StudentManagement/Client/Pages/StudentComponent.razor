@@ -1,0 +1,224 @@
+﻿@page "/StudentList"
+@using StudentManagement.Shared.Models
+@using StudentManagement.Client.IStudentService
+@using StudentManagement.Client.Pages
+
+@inject IStudentService IClientStudent
+
+<section>
+    <div class="container pt-5">
+        <div class="mb-3">
+            <button @onclick="AddStudent" type="button" class="btn btn-primary btn-rounded">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-lg" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd" d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2" />
+                </svg>
+                Add Student
+            </button>
+        </div>
+
+        <table class="table align-middle mb-0 bg-white">
+            <thead class="bg-light">
+                <tr>
+                    <th>Name</th>
+                    <th>Address</th>
+                    <th>Contact No.</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach(var student in StudentList)
+                {
+                     
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <p class="fw-normal fw-bold">@($"{student.FirstName} {student.LastName}")</p>
+                            </div>
+                        </td>
+
+                        <td>
+                            <p class="fw-normal mb-1">@student.Address</p>
+                        </td>
+                        <td>
+                            <p class="fw-normal mb-1">@student.ContactNo</p>
+                        </td>
+                        <td>
+                            <button @onclick="(()=>DeleteStudent(student.StudentId))" type="button" class="btn btn-danger btn-rounded">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
+                                    <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z" />
+                                    <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z" />
+                                </svg>
+                                Delete
+                            </button>
+                             <button @onclick="(()=>EditStudent(student))" type="button" class="btn btn-primary btn-rounded">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pencil-square" viewBox="0 0 16 16">
+                                    <path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z" />
+                                    <path fill-rule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5z" />
+                                </svg>
+                                 Edit
+                             </button>
+                        </td>
+                    </tr>
+                }
+
+            </tbody>
+        </table>
+    </div>
+</section>
+
+@code {
+    [CascadingParameter] public IModalService Modal { get; set; }
+    public Random Random { get; set; }
+
+    List<Student> StudentList = new List<Student>();
+    Student students = new Student();
+
+    protected override async Task OnInitializedAsync()
+    {
+        FetchStudents();
+    }
+
+    // List all the students
+    async Task FetchStudents()
+    {
+        await Swal.ShowLoadingAsync();
+        StudentList = await IClientStudent.GetStudents();
+        StateHasChanged();
+        await Swal.CloseAsync();
+    }
+
+    // Delete
+    async void DeleteStudent(int id)
+    {
+        try
+        {
+            SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions
+            {
+                Title = "Confirm Deletion",
+                Text = "Confirming, are you sure about that?",
+                Icon = "question",
+                ShowCancelButton = true,
+                ConfirmButtonText = "Yes",
+                CancelButtonText = "Cancel",
+                AllowOutsideClick = false
+            });
+
+            if (result.IsConfirmed)
+            {
+                var apiResponse = await IClientStudent.DeleteStudent(id);
+                if (apiResponse.IsSuccessStatusCode)
+                {
+                    await Swal.FireAsync("Success", "A record has been deleted", "success");
+                    FetchStudents();
+                }
+                else
+                {
+                    await Swal.FireAsync("Warning", "Something went wrong", "warning");
+                }
+            }
+
+        }
+        catch (Exception e)
+        {
+            throw;
+        }
+    }
+
+    // Add Student
+    async void AddStudent()
+    {
+        try
+        {
+            var parameters = new ModalParameters().Add(nameof(DynamicModal.DataId), 0).Add(nameof(DynamicModal.BtnLabel), "Save");
+            var viewModal = Modal.Show<DynamicModal>("Add Student", parameters);
+            var result = await viewModal.Result;
+            var addresult = result.Data as Student;
+            students = addresult is null ? new Student() : addresult;
+
+
+            if (result.Cancelled)
+            {
+                Console.WriteLine("Modal was cancelled");
+            }
+            else if (result.Confirmed)
+            {
+                Console.WriteLine("Modal was closed");
+
+                var http_response = await IClientStudent.AddStudent(students);
+
+                if (http_response.IsSuccessStatusCode)
+                {
+                    await Swal.FireAsync(new SweetAlertOptions
+                        {
+                            Title = "Add Student",
+                            Icon = SweetAlertIcon.Success, 
+                            Text = "Student added successfully"  
+                        });
+                }
+                else
+                {
+                    await Swal.FireAsync(new SweetAlertOptions
+                        {
+                            Title = "Failed to add student.",
+                            Icon = SweetAlertIcon.Warning
+                        });
+                }
+                await FetchStudents();
+            }
+
+        }
+        catch (Exception e)
+        {
+
+            throw e;
+        }
+    }
+
+    // Edit Student
+    async void EditStudent(Student student)
+    {
+        try
+        {
+            var parameters = new ModalParameters().Add(nameof(DynamicModal.students), student).Add(nameof(DynamicModal.BtnLabel), "Save");
+            var viewModal = Modal.Show<DynamicModal>("Update Student", parameters);
+            var result = await viewModal.Result;
+            var addresult = result.Data as Student;
+            students = addresult is null ? new Student() : addresult;
+              
+            if (result.Cancelled)
+            {
+                Console.WriteLine("Modal was cancelled");
+            }
+            else 
+            {
+                Console.WriteLine("Modal was closed");
+
+                var http_response = await IClientStudent.EditStudent(student);
+                 
+                if (http_response.IsSuccessStatusCode)
+                {
+                    await Swal.FireAsync(new SweetAlertOptions
+                        {
+                            Title = "Update Student",
+                            Icon = SweetAlertIcon.Success,
+                            Text = "Student updated successfully"
+                        });
+                }
+                else
+                {
+                    await Swal.FireAsync(new SweetAlertOptions
+                        {
+                            Title = "Failed to update student.",
+                            Icon = SweetAlertIcon.Warning
+                        });
+                }
+                await FetchStudents();
+            }
+
+        }
+        catch (Exception e)
+        {
+            throw e;
+        }
+    }
+}

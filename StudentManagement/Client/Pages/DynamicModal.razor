@@ -1,0 +1,48 @@
+﻿@using Microsoft.AspNetCore.Components.Forms
+@using StudentManagement.Shared.Models
+
+<EditForm Model="students" OnSubmit="Submit">
+    <div class="row">
+        <div class="col-md-6">
+            <div class="form-group">
+                <label for="fname">First Name</label>
+                <InputText @bind-Value="students.FirstName" class="form-control" id="fname" placeholder="e.g. Juan" autocomplete="off"></InputText>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                <label for="lname">Last Name</label>
+                <InputText @bind-Value="students.LastName" class="form-control" id="lname" placeholder="e.g. Dela Cruz" autocomplete="off"></InputText>
+            </div>
+        </div>
+    </div>
+    <div class="form-group">
+        <label for="address">Address</label>
+        <InputText @bind-Value="students.Address" class="form-control" id="address" placeholder="e.g. Balanga, Bataan" autocomplete="off"></InputText>
+    </div>
+    <div class="form-group">
+        <label for="contact">Contact No.</label>
+        <InputText @bind-Value="students.ContactNo" class="form-control" id="contact" placeholder="e.g. 09123456789" autocomplete="off"></InputText>
+    </div>
+    <button @onclick="ModalClose" class="btn btn-outline-primary mt-3">Cancel</button>
+    <button type="submit" class="btn btn-success mt-3">Save</button>
+</EditForm>
+
+@code {
+    [CascadingParameter] public IModalService Modal { get; set; }
+    [CascadingParameter] BlazoredModalInstance BlazoredModal { get; set; } = default!;
+
+    [Parameter] public string BtnLabel { get; set; }
+    [Parameter] public Student students { get; set; } = new Student();
+    [Parameter] public int DataId { get; set; }
+
+    async Task Submit()
+    {
+        await BlazoredModal.CloseAsync(ModalResult.Ok(students));
+    }
+
+    async void ModalClose()
+    {
+        await BlazoredModal.CancelAsync();
+    }
+}
